@@ -137,7 +137,7 @@ $("#fab").hidden=true;
 async function start(session){
  $("#login").hidden=!!session;if(!session){houses=[];render();return}
  uid=session.user.id;const p=await sb.from("profiles").select("role").eq("id",uid).single();role=p.data?.role||"pending";
- $("#role").textContent={admin:"👑 ผู้ใหญ่บ้าน",staff:"🛠️ เจ้าหน้าที่",viewer:"👤 ผู้ดูข้อมูล",pending:"⏳ รออนุมัติ"}[role];
+ $("#role").textContent={admin:"👑 Admin",staff:"🛠️ เจ้าหน้าที่",viewer:"👤 ผู้ดูข้อมูล",pending:"⏳ รออนุมัติ"}[role];
  $("#fab").hidden=!canEdit();$("#xl").hidden=!canEdit();$("#usr").hidden=!isAdmin();
  if(role==="pending"){$("#side").innerHTML='<div class="mut">บัญชีของคุณรอผู้ใหญ่บ้านอนุมัติสิทธิ์ กรุณาติดต่อผู้ใหญ่บ้าน แล้วรีเฟรชหน้านี้</div>';return}
  await load();sb.channel("live").on("postgres_changes",{event:"*",schema:"public"},later).subscribe()}
