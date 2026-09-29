@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>แผนที่ทะเบียนบ้าน หมู่ 5 บ้านคลองพลู</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--tx:#18271f;--mut:#66766d;--pri:#1f7a4d;--bd:#dce5e0}
+@media(prefers-color-scheme:dark){:root{--bg:#121a16;--card:#1b2620;--tx:#e8f0ec;--mut:#93a49b;--pri:#3fb77a;--bd:#2c3a33}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Sarabun,system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;font-size:16px;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+header{padding:8px 12px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+header h1{font-size:17px;margin:0}header small{color:var(--mut);display:block;font-size:12px}
+.badge{margin-left:auto;font-size:12px;padding:3px 9px;border-radius:99px;background:var(--pri);color:#fff;white-space:nowrap}
+.sb{padding:8px 12px;background:var(--card);display:flex;gap:6px}
+input,select,textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+button{font:inherit;border:0;border-radius:10px;padding:9px 14px;background:var(--pri);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--pri);border:1px solid var(--bd)}button.del{background:#b3261e}button.sm{padding:5px 10px;font-size:13px}
+main{flex:1;display:flex;min-height:0}
+#map{flex:1;min-width:0;z-index:0}
+#side{width:340px;background:var(--card);border-left:1px solid var(--bd);overflow:auto;padding:10px}
+@media(max-width:700px){main{flex-direction:column}#side{width:100%;height:44%;border-left:0;border-top:1px solid var(--bd)}}
+.pin{background:#d33a2f;color:#fff;font-weight:700;font-size:12px;border:2px solid #fff;border-radius:99px;padding:1px 7px;white-space:nowrap;width:max-content;transform:translate(-50%,-50%);box-shadow:0 1px 4px #0007}
+.pin.on{background:#f39c00;color:#111;font-size:14px}
+#fab{position:absolute;left:10px;bottom:22px;z-index:500}
+#banner{position:absolute;left:10px;right:60px;top:10px;z-index:500;background:#f39c00;color:#111;padding:8px 10px;border-radius:10px;display:none;gap:8px;align-items:center;flex-wrap:wrap}
+.item{padding:10px;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.item span{display:block;color:var(--mut);font-size:13px}
+.mem{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.mem small{color:var(--mut);display:block}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:flex-end}
+#modal,#login{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;padding:14px;z-index:2000}
+#login{background:var(--bg)}[hidden]{display:none!important}
+.box{background:var(--card);border-radius:14px;padding:16px;width:100%;max-width:400px;max-height:90%;overflow:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#222;color:#fff;padding:9px 16px;border-radius:99px;z-index:3000;display:none;font-size:14px}
+.mut{color:var(--mut);font-size:14px}a{color:var(--pri)}
+</style></head><body>
+<div id="login"><div class="box"><h2 style="margin-top:0">🏘️ หมู่ที่ 5 บ้านคลองพลู</h2><div class="mut">ต.พนานิคม อ.นิคมพัฒนา จ.ระยอง</div>
+<label>อีเมล</label><input id="em" type="email" autocomplete="username"><label>รหัสผ่าน (อย่างน้อย 6 ตัว)</label><input id="pw" type="password" autocomplete="current-password">
+<div id="lmsg" class="mut" style="margin-top:8px"></div>
+<div class="row"><button class="ghost" id="signup">สมัครใช้งาน</button><button id="signin">เข้าสู่ระบบ</button></div></div></div>
+<header><div><h1>🏘️ แผนที่ทะเบียนบ้าน หมู่ที่ 5 บ้านคลองพลู</h1><small>ต.พนานิคม อ.นิคมพัฒนา จ.ระยอง</small></div><span class="badge" id="role"></span><button class="ghost sm" id="out">ออก</button></header>
+<div class="sb"><input id="q" type="search" placeholder="🔎 ค้นหาบ้านเลขที่ หรือ ชื่อคน" autocomplete="off"><button class="ghost" id="xl" title="ส่งออก Excel" hidden>⬇️ Excel</button><button class="ghost" id="usr" title="จัดการผู้ใช้" hidden>👥</button></div>
+<main><div style="flex:1;position:relative;min-width:0;display:flex"><div id="map"></div>
+<div id="banner"><span id="bmsg"></span><button class="sm" id="bgps">📍 ใช้ตำแหน่งปัจจุบัน</button><button class="sm" id="bcancel" style="background:#fff;color:#111">ยกเลิก</button></div>
+<button id="fab" hidden>➕ เพิ่มบ้าน</button></div><aside id="side"></aside></main>
+<div id="modal" hidden></div><div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ===== ตั้งค่า: ใส่ค่าจาก Supabase > Project Settings > API ===== */
+const SB_URL="https://gcguzxltdduupldwsetw.supabase.co", SB_KEY="sb_publishable_nQlpo_Bhug7U8XaWRMmwzQ_ZkkqHPp0";
+/* ================================================================ */
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const POLY="101.1328,12.8907 101.1382,12.8886 101.1414,12.8868 101.1429,12.8895 101.1452,12.8934 101.1468,12.8962 101.1469,12.8971 101.1469,12.8977 101.1468,12.8981 101.1469,12.8984 101.1471,12.8986 101.1476,12.8990 101.1489,12.9009 101.1507,12.9039 101.1523,12.9073 101.1525,12.9076 101.1528,12.9100 101.1530,12.9147 101.1532,12.9214 101.1530,12.9224 101.1523,12.9258 101.1519,12.9272 101.1516,12.9311 101.1514,12.9310 101.1508,12.9306 101.1503,12.9303 101.1496,12.9302 101.1490,12.9302 101.1487,12.9300 101.1484,12.9296 101.1481,12.9293 101.1476,12.9288 101.1470,12.9287 101.1465,12.9286 101.1459,12.9281 101.1457,12.9272 101.1394,12.9174 101.1361,12.9121 101.1344,12.9095 101.1334,12.9079 101.1326,12.9067 101.1309,12.9039 101.1300,12.9024 101.1293,12.9013 101.1285,12.9000 101.1276,12.8986 101.1259,12.8957 101.1257,12.8954 101.1294,12.8933";
+const $=s=>document.querySelector(s),v=id=>$("#"+id).value.trim();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LL=POLY.split(" ").map(s=>{const[a,b]=s.split(",").map(Number);return[b,a]});
+const inside=(la,lo)=>{let c=false;for(let i=0,j=LL.length-1;i<LL.length;j=i++){const[a,b]=LL[i],[d,e]=LL[j];if((b>lo)!=(e>lo)&&la<(d-a)*(lo-b)/(e-b)+a)c=!c}return c};
+let houses=[],sel=null,mode=null,role="pending",q="",uid=null;
+const canEdit=()=>role==="staff"||role==="admin",isAdmin=()=>role==="admin";
+let tt;const toast=m=>{const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(tt);tt=setTimeout(()=>t.style.display="none",3500)};
+const err=e=>toast("ไม่สำเร็จ: "+(e?.message||e));
+/* ---- map ---- */
+const bounds=L.latLngBounds(LL);
+const map=L.map("map",{minZoom:14,maxZoom:20,maxBounds:bounds.pad(.4),zoomControl:false}).fitBounds(bounds);
+L.control.zoom({position:"topright"}).addTo(map);
+const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxNativeZoom:17,maxZoom:20,attribution:"ภาพ © Esri"}).addTo(map);
+const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxNativeZoom:19,maxZoom:20,attribution:"© OpenStreetMap"});
+L.control.layers({"ดาวเทียม":sat,"แผนที่ถนน":osm},null,{position:"topright"}).addTo(map);
+const W=[[-90,-180],[-90,180],[90,180],[90,-180]];
+L.polygon([W,LL],{stroke:false,fillColor:"#40474a",fillOpacity:.72,interactive:false}).addTo(map);
+L.polygon(LL,{color:"#e53935",weight:3,fill:false,interactive:false}).addTo(map);
+const layer=L.layerGroup().addTo(map);let meMark=null;
+map.on("click",e=>{if(!mode)return;if(!inside(e.latlng.lat,e.latlng.lng))return toast("ตำแหน่งอยู่นอกเขตหมู่บ้าน");const m=mode;endMode();m.cb(e.latlng.lat,e.latlng.lng)});
+function geo(cb){if(!navigator.geolocation)return toast("อุปกรณ์ไม่รองรับ GPS");navigator.geolocation.getCurrentPosition(p=>{const{latitude:a,longitude:o}=p.coords;if(!inside(a,o))return toast("คุณอยู่นอกเขตหมู่บ้าน");cb(a,o)},()=>toast("เข้าถึง GPS ไม่ได้ (ตรวจสอบการอนุญาตตำแหน่ง)"),{enableHighAccuracy:true,timeout:12000})}
+const startMode=(msg,cb)=>{mode={cb};$("#bmsg").textContent=msg;$("#banner").style.display="flex"};
+const endMode=()=>{mode=null;$("#banner").style.display="none"};
+$("#bcancel").onclick=endMode;$("#bgps").onclick=()=>geo((a,o)=>{const m=mode;endMode();m.cb(a,o)});
+/* ---- data ---- */
+async function load(){
+ const[h,m]=await Promise.all([sb.from("houses").select("*"),sb.from("members_view").select("*")]);
+ if(h.error||m.error)return err(h.error||m.error);
+ houses=h.data.map(x=>({...x,members:m.data.filter(y=>y.house_id===x.id).sort((a,b)=>(a.name||"").localeCompare(b.name||"","th"))}));render()}
+let lt;const later=()=>{clearTimeout(lt);lt=setTimeout(load,400)};
+const cur=()=>houses.find(h=>h.id===sel);
+const match=h=>{const s=q.toLowerCase();return h.no.toLowerCase().includes(s)||h.members.some(m=>(m.name||"").toLowerCase().includes(s))};
+/* ---- render ---- */
+function render(){layer.clearLayers();
+ for(const h of houses.filter(x=>!q||match(x))){const on=h.id===sel;
+  L.marker([h.lat,h.lon],{icon:L.divIcon({className:"",html:`<div class="pin ${on?"on":""}">${esc(h.no)}</div>`,iconSize:[0,0]}),zIndexOffset:on?1000:0}).on("click",()=>select(h.id)).addTo(layer)}
+ const s=$("#side"),h=cur();
+ if(h){const ms=h.members;
+  s.innerHTML=`<button class="ghost sm" id="back">← กลับรายการ</button><h2 style="margin:10px 0 2px">บ้านเลขที่ ${esc(h.no)}</h2><div class="mut">${esc(h.note||"ไม่มีหมายเหตุ")}</div>
+  <h3 style="margin:14px 0 4px">สมาชิก (${ms.length} คน)</h3>${ms.map(m=>`<div class="mem"><div><b>${esc(m.name)}</b><small>${esc(m.role||"")}${canEdit()&&m.phone?` · <a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>`:""}</small></div>${canEdit()?`<div><button class="sm ghost" data-e="${m.id}">แก้</button>${isAdmin()?` <button class="sm del" data-d="${m.id}">ลบ</button>`:""}</div>`:""}</div>`).join("")||'<div class="mut">ยังไม่มีสมาชิก</div>'}
+  ${canEdit()?`<div class="row" style="justify-content:flex-start"><button id="am">+ เพิ่มสมาชิก</button><button class="ghost" id="eh">แก้ไขบ้าน</button><button class="ghost" id="mv">ย้ายหมุด</button>${isAdmin()?'<button class="del" id="dh">ลบบ้าน</button>':""}</div>`:""}`;
+  $("#back").onclick=()=>{sel=null;render()};
+  if(canEdit()){$("#am").onclick=()=>memberForm(h);$("#eh").onclick=()=>houseForm(h);
+   $("#mv").onclick=()=>startMode("แตะตำแหน่งใหม่ของบ้านเลขที่ "+h.no,async(a,o)=>{const r=await sb.from("houses").update({lat:a,lon:o,updated_at:new Date()}).eq("id",h.id);r.error?err(r.error):load()});
+   s.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>memberForm(h,ms.find(m=>m.id===b.dataset.e)));
+   s.querySelectorAll("[data-d]").forEach(b=>b.onclick=async()=>{if(!confirm("ลบสมาชิกคนนี้?"))return;const r=await sb.from("members").delete().eq("id",b.dataset.d);r.error?err(r.error):load()});
+   isAdmin()&&($("#dh").onclick=async()=>{if(!confirm("ลบบ้านเลขที่ "+h.no+" และสมาชิกทั้งหมด?"))return;const r=await sb.from("houses").delete().eq("id",h.id);if(r.error)return err(r.error);sel=null;load()})}
+  return}
+ const list=houses.filter(x=>!q||match(x)).sort((a,b)=>a.no.localeCompare(b.no,"th",{numeric:true}));
+ const n=houses.reduce((t,x)=>t+x.members.length,0);
+ s.innerHTML=`<div class="mut" style="margin-bottom:8px">${houses.length} หลังคาเรือน · ${n} คน${q?` · พบ ${list.length} หลัง`:""}</div>`+
+ (list.map(x=>{const hit=q?x.members.filter(m=>(m.name||"").toLowerCase().includes(q.toLowerCase())).map(m=>m.name):[];
+  return`<div class="item" data-id="${x.id}"><b>บ้านเลขที่ ${esc(x.no)}</b><span>${esc(x.members.map(m=>m.name).slice(0,4).join(", ")||"ยังไม่มีสมาชิก")}</span>${hit.length?`<span style="color:var(--pri)">พบ: ${esc(hit.join(", "))}</span>`:""}</div>`}).join("")||`<div class="mut">${q?"ไม่พบข้อมูล":"ยังไม่มีบ้านในระบบ"+(canEdit()?" — กด ➕ เพิ่มบ้าน":"")}</div>`);
+ s.querySelectorAll(".item").forEach(i=>i.onclick=()=>select(i.dataset.id))}
+function select(id){sel=id;const h=cur();render();h&&map.setView([h.lat,h.lon],Math.max(map.getZoom(),18))}
+$("#q").oninput=e=>{q=e.target.value.trim();sel=null;render()};
+/* ---- forms ---- */
+function modal(html,ok,label="บันทึก"){const m=$("#modal");m.innerHTML=`<div class="box">${html}<div class="row"><button class="ghost" id="mc">ปิด</button>${ok?`<button id="mo">${label}</button>`:""}</div></div>`;m.hidden=false;$("#mc").onclick=()=>m.hidden=true;
+ if(ok)$("#mo").onclick=async()=>{try{await ok();m.hidden=true}catch(e){err(e)}};const f=m.querySelector("input");f&&f.focus()}
+function houseForm(h){const nw=!h.id;modal(`<h3 style="margin:0">${nw?"เพิ่มบ้านใหม่":"แก้ไขบ้าน"}</h3><label>บ้านเลขที่ *</label><input id="fno" value="${esc(h.no||"")}"><label>หมายเหตุ (เช่น ร้านค้า, บ้านว่าง)</label><textarea id="fnote" rows="2">${esc(h.note||"")}</textarea>`,async()=>{
+ const no=v("fno");if(!no)throw"กรุณาใส่บ้านเลขที่";if(houses.some(x=>x.no===no&&x.id!==h.id))throw"มีบ้านเลขที่นี้แล้ว";
+ const r=nw?await sb.from("houses").insert({no,note:v("fnote"),lat:h.lat,lon:h.lon}).select().single():await sb.from("houses").update({no,note:v("fnote"),updated_at:new Date()}).eq("id",h.id);
+ if(r.error)throw r.error;if(nw)sel=r.data.id;await load()})}
+function memberForm(h,m={}){modal(`<h3 style="margin:0">${m.id?"แก้ไขสมาชิก":"เพิ่มสมาชิก"} · บ้าน ${esc(h.no)}</h3><label>ชื่อ-นามสกุล *</label><input id="mn" value="${esc(m.name||"")}"><label>สถานะ</label><input id="mr" list="rl" value="${esc(m.role||"")}"><datalist id="rl"><option>เจ้าบ้าน<option>คู่สมรส<option>บุตร<option>บิดา/มารดา<option>ผู้อาศัย</datalist><label>เบอร์โทร</label><input id="mp" type="tel" value="${esc(m.phone||"")}">`,async()=>{
+ const name=v("mn");if(!name)throw"กรุณาใส่ชื่อ";const d={name,role:v("mr"),phone:v("mp"),updated_at:new Date()};
+ const r=m.id?await sb.from("members").update(d).eq("id",m.id):await sb.from("members").insert({...d,house_id:h.id});if(r.error)throw r.error;await load()})}
+$("#fab").onclick=()=>startMode("แตะตำแหน่งบ้านบนแผนที่ (หรือใช้ GPS ถ้าอยู่หน้าบ้าน)",(a,o)=>houseForm({lat:a,lon:o}));
+/* ---- Excel + users ---- */
+$("#xl").onclick=()=>{const rows=[];houses.sort((a,b)=>a.no.localeCompare(b.no,"th",{numeric:true})).forEach(h=>{const b={"บ้านเลขที่":h.no,"หมายเหตุ":h.note,"ละติจูด":h.lat,"ลองจิจูด":h.lon};h.members.length?h.members.forEach(m=>rows.push({...b,"ชื่อ":m.name,"สถานะ":m.role,"โทร":m.phone})):rows.push(b)});
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"ทะเบียนบ้าน");XLSX.writeFile(wb,"ทะเบียนบ้าน-คลองพลู.xlsx")};
+$("#usr").onclick=async()=>{const r=await sb.from("profiles").select("*").order("created_at",{ascending:false});if(r.error)return err(r.error);
+ const T={pending:"รออนุมัติ",viewer:"ผู้ดูข้อมูล",staff:"เจ้าหน้าที่",admin:"Admin"};
+ modal(`<h3 style="margin:0">จัดการผู้ใช้งาน</h3>`+r.data.map(p=>`<label>${esc(p.email)}</label><select data-u="${p.id}" ${p.id===uid?"disabled":""}>${Object.entries(T).map(([k,t])=>`<option value="${k}" ${k===p.role?"selected":""}>${t}</option>`).join("")}</select>`).join(""));
+ document.querySelectorAll("[data-u]").forEach(s=>s.onchange=async()=>{const x=await sb.from("profiles").update({role:s.value}).eq("id",s.dataset.u);x.error?err(x.error):toast("บันทึกสิทธิ์แล้ว")})};
+/* ---- auth ---- */
+const auth=async fn=>{$("#lmsg").textContent="";const{error}=await fn({email:v("em"),password:$("#pw").value});if(error)$("#lmsg").textContent=error.message};
+$("#signin").onclick=()=>auth(sb.auth.signInWithPassword.bind(sb.auth));
+$("#signup").onclick=async()=>{await auth(sb.auth.signUp.bind(sb.auth));if(!$("#lmsg").textContent)$("#lmsg").textContent="สมัครแล้ว — หากระบบส่งอีเมลยืนยัน ให้กดยืนยันก่อนเข้าสู่ระบบ แล้วรอผู้ใหญ่บ้านอนุมัติสิทธิ์"};
+$("#out").onclick=()=>sb.auth.signOut();
+$("#fab").hidden=true;
+async function start(session){
+ $("#login").hidden=!!session;if(!session){houses=[];render();return}
+ uid=session.user.id;const p=await sb.from("profiles").select("role").eq("id",uid).single();role=p.data?.role||"pending";
+ $("#role").textContent={admin:"👑 ผู้ใหญ่บ้าน",staff:"🛠️ เจ้าหน้าที่",viewer:"👤 ผู้ดูข้อมูล",pending:"⏳ รออนุมัติ"}[role];
+ $("#fab").hidden=!canEdit();$("#xl").hidden=!canEdit();$("#usr").hidden=!isAdmin();
+ if(role==="pending"){$("#side").innerHTML='<div class="mut">บัญชีของคุณรอผู้ใหญ่บ้านอนุมัติสิทธิ์ กรุณาติดต่อผู้ใหญ่บ้าน แล้วรีเฟรชหน้านี้</div>';return}
+ await load();sb.channel("live").on("postgres_changes",{event:"*",schema:"public"},later).subscribe()}
+sb.auth.onAuthStateChange((ev,s)=>{if(ev==="INITIAL_SESSION"||ev==="SIGNED_IN"||ev==="SIGNED_OUT")setTimeout(()=>start(s),0)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&role!=="pending"&&uid)load()});
+</script></body></html>
