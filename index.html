@@ -68,7 +68,9 @@ const map=L.map("map",{minZoom:14,maxZoom:20,maxBounds:bounds.pad(.4),zoomContro
 L.control.zoom({position:"topright"}).addTo(map);
 const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxNativeZoom:17,maxZoom:20,attribution:"ภาพ © Esri"}).addTo(map);
 const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxNativeZoom:19,maxZoom:20,attribution:"© OpenStreetMap"});
-L.control.layers({"ดาวเทียม":sat,"แผนที่ถนน":osm},null,{position:"topright"}).addTo(map);
+const Sw=L.control({position:"topright"});
+Sw.onAdd=()=>{const d=L.DomUtil.create("div","sw");d.innerHTML='<button data-l="sat" class="on">🛰️ ดาวเทียม</button><button data-l="osm">🗺️ แผนที่</button>';L.DomEvent.disableClickPropagation(d);
+ d.onclick=e=>{const b=e.target.closest("button");if(!b)return;const isSat=b.dataset.l==="sat";map.addLayer(isSat?sat:osm);map.removeLayer(isSat?osm:sat);d.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b))};return d};Sw.addTo(map);
 const W=[[-90,-180],[-90,180],[90,180],[90,-180]];
 L.polygon([W,LL],{stroke:false,fillColor:"#40474a",fillOpacity:.72,interactive:false}).addTo(map);
 L.polygon(LL,{color:"#e53935",weight:3,fill:false,interactive:false}).addTo(map);
@@ -87,15 +89,19 @@ let lt;const later=()=>{clearTimeout(lt);lt=setTimeout(load,400)};
 const cur=()=>houses.find(h=>h.id===sel);
 const match=h=>{const s=q.toLowerCase();return h.no.toLowerCase().includes(s)||h.members.some(m=>(m.name||"").toLowerCase().includes(s))};
 /* ---- render ---- */
-function render(){layer.clearLayers();
+const gm=h=>`https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lon}`;
+async function copy(t){try{await navigator.clipboard.writeText(t)}catch(e){const x=document.createElement("textarea");x.value=t;document.body.appendChild(x);x.select();try{document.execCommand("copy")}catch(_){}x.remove()}toast("คัดลอกลิงก์แล้ว วางในไลน์หรือ Google Maps ได้เลย")}
+ function render(){layer.clearLayers();
  for(const h of houses.filter(x=>!q||match(x))){const on=h.id===sel;
   L.marker([h.lat,h.lon],{icon:L.divIcon({className:"",html:`<div class="pin ${on?"on":""}">${esc(h.no)}</div>`,iconSize:[0,0]}),zIndexOffset:on?1000:0}).on("click",()=>select(h.id)).addTo(layer)}
  const s=$("#side"),h=cur();
  if(h){const ms=h.members;
   s.innerHTML=`<button class="ghost sm" id="back">← กลับรายการ</button><h2 style="margin:10px 0 2px">บ้านเลขที่ ${esc(h.no)}</h2><div class="mut">${esc(h.note||"ไม่มีหมายเหตุ")}</div>
+  <div class="row" style="justify-content:flex-start;margin-top:10px"><button id="cp">📋 คัดลอกลิงก์ตำแหน่ง</button><button class="ghost" id="go">🧭 เปิดใน Google Maps</button></div>
   <h3 style="margin:14px 0 4px">สมาชิก (${ms.length} คน)</h3>${ms.map(m=>`<div class="mem"><div><b>${esc(m.name)}</b><small>${esc(m.role||"")}${canEdit()&&m.phone?` · <a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>`:""}</small></div>${canEdit()?`<div><button class="sm ghost" data-e="${m.id}">แก้</button>${isAdmin()?` <button class="sm del" data-d="${m.id}">ลบ</button>`:""}</div>`:""}</div>`).join("")||'<div class="mut">ยังไม่มีสมาชิก</div>'}
   ${canEdit()?`<div class="row" style="justify-content:flex-start"><button id="am">+ เพิ่มสมาชิก</button><button class="ghost" id="eh">แก้ไขบ้าน</button><button class="ghost" id="mv">ย้ายหมุด</button>${isAdmin()?'<button class="del" id="dh">ลบบ้าน</button>':""}</div>`:""}`;
   $("#back").onclick=()=>{sel=null;render()};
+       $("#cp").onclick=()=>copy(gm(h));$("#go").onclick=()=>window.open(gm(h),"_blank","noopener");
   if(canEdit()){$("#am").onclick=()=>memberForm(h);$("#eh").onclick=()=>houseForm(h);
    $("#mv").onclick=()=>startMode("แตะตำแหน่งใหม่ของบ้านเลขที่ "+h.no,async(a,o)=>{const r=await sb.from("houses").update({lat:a,lon:o,updated_at:new Date()}).eq("id",h.id);r.error?err(r.error):load()});
    s.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>memberForm(h,ms.find(m=>m.id===b.dataset.e)));
