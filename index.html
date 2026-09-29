@@ -46,7 +46,7 @@ main{flex:1;display:flex;min-height:0}
 <div id="lmsg" class="mut" style="margin-top:8px"></div>
 <div class="row"><button class="ghost" id="signup">สมัครใช้งาน</button><button id="signin">เข้าสู่ระบบ</button></div></div></div>
 <header><div><h1>🏘️ แผนที่ทะเบียนบ้าน หมู่ที่ 5 บ้านคลองพลู</h1><small>ต.พนานิคม อ.นิคมพัฒนา จ.ระยอง</small></div><span class="badge" id="role"></span><button class="ghost sm" id="out">ออก</button></header>
-<div class="sb"><input id="q" type="search" placeholder="🔎 ค้นหาบ้านเลขที่ หรือ ชื่อคน" autocomplete="off"><button class="ghost" id="lt" title="ซ่อน/แสดงรายการ">📋</button><button class="ghost" id="xl" title="ส่งออก Excel" hidden>⬇️ Excel</button><button class="ghost" id="usr" title="จัดการผู้ใช้" hidden>👥</button></div>
+<div class="sb"><input id="q" type="search" placeholder="🔎 ค้นหาบ้านเลขที่ หรือ ชื่อคน" autocomplete="off"><button class="ghost" id="lt" title="ซ่อน/แสดงรายการ">📋</button><button class="ghost" id="lt" title="ซ่อน/แสดงรายการ">📋</button><button class="ghost" id="xl" title="ส่งออก Excel" hidden>⬇️ Excel</button><button class="ghost" id="usr" title="จัดการผู้ใช้" hidden>👥</button></div>
 <main><div style="flex:1;position:relative;min-width:0;display:flex"><div id="map"></div>
 <div id="banner"><span id="bmsg"></span><button class="sm" id="bgps">📍 ใช้ตำแหน่งปัจจุบัน</button><button class="sm" id="bcancel" style="background:#fff;color:#111">ยกเลิก</button></div>
 <button id="fab" hidden>➕ เพิ่มบ้าน</button></div><aside id="side"></aside></main>
@@ -123,6 +123,8 @@ async function copy(t){try{await navigator.clipboard.writeText(t)}catch(e){const
  s.querySelectorAll(".item").forEach(i=>i.onclick=()=>select(i.dataset.id))}
 function select(id){sel=id;const h=cur();render();h&&map.setView([h.lat,h.lon],Math.max(map.getZoom(),18))}
 $("#q").oninput=e=>{q=e.target.value.trim();sel=null;render()};
+ $("#lt").onclick=()=>{$("#side").classList.toggle("hide");setTimeout(()=>map.invalidateSize(),50)};
+$("#q").addEventListener("input",()=>$("#side").classList.remove("hide"));
  $("#lt").onclick=()=>{$("#side").classList.toggle("hide");setTimeout(()=>map.invalidateSize(),50)};
 $("#q").addEventListener("input",()=>$("#side").classList.remove("hide"));
 /* ---- forms ---- */
